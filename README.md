@@ -42,6 +42,7 @@
 - 本地已经保留回退方案，适合先部署再逐步接在线数据库
 
 ## 上线前检查
+- Vercel 部署前检查写在 `VERCEL_PRECHECK.md`
 - 部署后自测清单写在 `POST_DEPLOY_CHECKLIST.md`
 - 完整清单写在 `CHECKLIST.md`
 
