@@ -36,17 +36,18 @@
 
 ## 在线持久化
 - Supabase 快速上手写在 `SUPABASE_QUICKSTART.md`
+- Supabase 存储桶步骤写在 `SUPABASE_STORAGE_QUICKSTART.md`
 - Supabase 建表 SQL 和环境变量模板写在 `SUPABASE.md`
 - Vercel 和本地环境变量示例写在 `ENV_EXAMPLE.md`
 - 本地已经保留回退方案，适合先部署再逐步接在线数据库
 
 ## 上线前检查
-完整清单写在 `CHECKLIST.md`。
+- 部署后自测清单写在 `POST_DEPLOY_CHECKLIST.md`
+- 完整清单写在 `CHECKLIST.md`
 
 ## 如果你要让另一台电脑直接用
 最推荐的方式是先部署到 Vercel，然后在那台电脑直接打开部署后的网址。
 
 ## 后续扩展
 - 接入登录和头像
-- 接入真实图片上传
 - 增加编辑、删除、评论功能

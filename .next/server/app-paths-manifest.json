@@ -1,9 +1,9 @@
 {
-  "/message/page": "app/message/page.js",
-  "/about/page": "app/about/page.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/study/page": "app/study/page.js",
   "/feed/page": "app/feed/page.js",
   "/schedule/page": "app/schedule/page.js",
-  "/page": "app/page.js"
+  "/message/page": "app/message/page.js",
+  "/study/page": "app/study/page.js",
+  "/page": "app/page.js",
+  "/about/page": "app/about/page.js"
 }
