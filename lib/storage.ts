@@ -1,26 +1,9 @@
 "use client";
 
+import type { Post, StudyLog } from '@/lib/data';
+
 const postKey = 'birthday-site-posts';
 const studyKey = 'birthday-site-study-logs';
-
-export type Post = {
-  id: string;
-  author: string;
-  time: string;
-  text: string;
-  image: string;
-  likes: number;
-  created_at?: string;
-};
-
-export type StudyLog = {
-  id: string;
-  date: string;
-  title: string;
-  duration: string;
-  summary: string;
-  created_at?: string;
-};
 
 function readStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;

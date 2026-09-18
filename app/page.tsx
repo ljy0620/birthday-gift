@@ -1,11 +1,9 @@
-import { CountdownCard, CourseCard, PostCard, StudyCard } from '@/components/cards';
+import { CourseCard, PostCard, StudyCard } from '@/components/cards';
+import { CountdownCard } from '@/components/countdown';
 import { SiteHeader } from '@/components/header';
 import { countdownTarget, courses, posts, studyLogs } from '@/lib/data';
-import { getCountdownParts } from '@/lib/time';
 
 export default function HomePage() {
-  const countdown = getCountdownParts(countdownTarget);
-
   return (
     <>
       <SiteHeader />
@@ -26,7 +24,7 @@ export default function HomePage() {
               <span className="rounded-full bg-blush-50 px-4 py-2">生日倒计时</span>
             </div>
           </div>
-          <CountdownCard {...countdown} />
+          <CountdownCard target={countdownTarget} />
         </section>
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

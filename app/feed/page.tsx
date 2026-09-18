@@ -14,6 +14,8 @@ export default function FeedPage() {
   const [image, setImage] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -52,34 +54,54 @@ export default function FeedPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
 
-    let finalImage = image.trim();
-    if (!finalImage && file) {
-      finalImage = (await uploadImage(file)) ?? preview;
+    setError('');
+    setSubmitting(true);
+
+    try {
+      let finalImage = image.trim();
+
+      if (!finalImage && file) {
+        const uploaded = await uploadImage(file);
+        if (supabase && !uploaded) {
+          setError('图片上传失败，请重试，或改成填写图片链接。');
+          return;
+        }
+        finalImage = uploaded ?? preview;
+      }
+
+      if (!finalImage) {
+        finalImage = 'https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&w=1200&q=80';
+      }
+
+      const nextPost: Post = {
+        id: String(Date.now()),
+        author: author.trim() || '匿名',
+        time: '刚刚',
+        text: text.trim(),
+        image: finalImage,
+        likes: 0
+      };
+
+      if (supabase) {
+        const { error: insertError } = await supabase.from('posts').insert(nextPost);
+
+        if (insertError) {
+          setError(`发布失败：${insertError.message}`);
+          return;
+        }
+      }
+
+      setPosts((current) => [nextPost, ...current]);
+      setText('');
+      setImage('');
+      setFile(null);
+    } catch (caught) {
+      setError(`发布失败：${caught instanceof Error ? caught.message : '未知错误'}`);
+    } finally {
+      setSubmitting(false);
     }
-    if (!finalImage) {
-      finalImage = preview || 'https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&w=1200&q=80';
-    }
-
-    const nextPost: Post = {
-      id: String(Date.now()),
-      author: author.trim() || '匿名',
-      time: '刚刚',
-      text: text.trim(),
-      image: finalImage,
-      likes: 0
-    };
-
-    if (supabase) {
-      const { error } = await supabase.from('posts').insert(nextPost);
-      if (error) return;
-    }
-
-    setPosts((current) => [nextPost, ...current]);
-    setText('');
-    setImage('');
-    setFile(null);
   }
 
   return (
@@ -116,12 +138,13 @@ export default function FeedPage() {
               className="rounded-2xl border border-blush-100 px-4 py-3 outline-none file:mr-4 file:rounded-full file:border-0 file:bg-blush-50 file:px-4 file:py-2 file:text-blush-800"
             />
             {preview ? <img src={preview} alt="图片预览" className="max-h-64 rounded-2xl object-cover" /> : null}
+            {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
             <button
               type="submit"
-              disabled={!canSubmit}
+              disabled={!canSubmit || submitting}
               className="rounded-2xl bg-blush-600 px-5 py-3 font-medium text-white transition hover:bg-blush-700 disabled:cursor-not-allowed disabled:bg-blush-300"
             >
-              发布动态
+              {submitting ? '发布中…' : '发布动态'}
             </button>
           </div>
         </form>

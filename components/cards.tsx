@@ -1,31 +1,5 @@
 import type { Post } from '@/lib/data';
 
-export function CountdownCard({ days, hours, minutes, seconds }: { days: number; hours: string; minutes: string; seconds: string }) {
-  return (
-    <section className="rounded-[2.5rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_60px_rgba(130,25,74,0.12)] backdrop-blur">
-      <p className="text-sm font-medium tracking-[0.3em] text-blush-500">COUNTDOWN</p>
-      <div className="mt-4 flex items-end gap-3">
-        <span className="text-6xl font-semibold text-blush-900">{days}</span>
-        <span className="pb-3 text-lg text-blush-600">天</span>
-      </div>
-      <div className="mt-5 grid grid-cols-3 gap-3 text-center text-sm">
-        <div className="rounded-3xl bg-blush-50 p-4">
-          <div className="text-2xl font-semibold text-blush-900">{hours}</div>
-          <div className="mt-1 text-blush-700">小时</div>
-        </div>
-        <div className="rounded-3xl bg-blush-50 p-4">
-          <div className="text-2xl font-semibold text-blush-900">{minutes}</div>
-          <div className="mt-1 text-blush-700">分钟</div>
-        </div>
-        <div className="rounded-3xl bg-blush-50 p-4">
-          <div className="text-2xl font-semibold text-blush-900">{seconds}</div>
-          <div className="mt-1 text-blush-700">秒</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export function PostCard({ post }: { post: Post }) {
   return (
     <article className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-soft">

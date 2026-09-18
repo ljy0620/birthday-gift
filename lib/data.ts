@@ -25,7 +25,8 @@ export type CourseItem = {
   place: string;
 };
 
-export const countdownTarget = new Date('2026-12-24T00:00:00');
+// 只存年月日，具体时刻由浏览器解析成访问者本地的零点
+export const countdownTarget = '2026-12-24';
 
 export const posts: Post[] = [
   {

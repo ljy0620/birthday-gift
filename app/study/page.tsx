@@ -12,6 +12,8 @@ export default function StudyPage() {
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState('');
   const [summary, setSummary] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -39,28 +41,41 @@ export default function StudyPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
 
-    const today = new Date();
-    const date = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    setError('');
+    setSubmitting(true);
 
-    const nextLog: StudyLog = {
-      id: String(Date.now()),
-      date,
-      title: title.trim(),
-      duration: duration.trim() || '未记录',
-      summary: summary.trim()
-    };
+    try {
+      const today = new Date();
+      const date = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    if (supabase) {
-      const { error } = await supabase.from('study_logs').insert(nextLog);
-      if (error) return;
+      const nextLog: StudyLog = {
+        id: String(Date.now()),
+        date,
+        title: title.trim(),
+        duration: duration.trim() || '未记录',
+        summary: summary.trim()
+      };
+
+      if (supabase) {
+        const { error: insertError } = await supabase.from('study_logs').insert(nextLog);
+
+        if (insertError) {
+          setError(`保存失败：${insertError.message}`);
+          return;
+        }
+      }
+
+      setLogs((current) => [nextLog, ...current]);
+      setTitle('');
+      setDuration('');
+      setSummary('');
+    } catch (caught) {
+      setError(`保存失败：${caught instanceof Error ? caught.message : '未知错误'}`);
+    } finally {
+      setSubmitting(false);
     }
-
-    setLogs((current) => [nextLog, ...current]);
-    setTitle('');
-    setDuration('');
-    setSummary('');
   }
 
   return (
@@ -90,8 +105,13 @@ export default function StudyPage() {
               className="min-h-32 rounded-2xl border border-blush-100 px-4 py-3 outline-none focus:border-blush-300"
               placeholder="总结今天的收获"
             />
-            <button type="submit" disabled={!canSubmit} className="rounded-2xl bg-blush-600 px-5 py-3 font-medium text-white transition hover:bg-blush-700 disabled:cursor-not-allowed disabled:bg-blush-300">
-              保存打卡
+            {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+            <button
+              type="submit"
+              disabled={!canSubmit || submitting}
+              className="rounded-2xl bg-blush-600 px-5 py-3 font-medium text-white transition hover:bg-blush-700 disabled:cursor-not-allowed disabled:bg-blush-300"
+            >
+              {submitting ? '保存中…' : '保存打卡'}
             </button>
           </div>
         </form>
