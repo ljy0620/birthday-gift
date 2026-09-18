@@ -51,6 +51,23 @@ create policy "public insert study logs"
   with check (true);
 ```
 
+# Storage 上传策略 SQL
+
+**这一步不能省。** 上面的建表 SQL 只覆盖了两张表，没有覆盖 Storage。
+公开 bucket 只能让所有人**读取**，**上传仍然需要单独的策略**——不加这段，
+代码里的图片上传会一直失败（而且以前是静默失败，现在会显示红字报错）。
+
+先创建 bucket：Storage → New bucket → 名字填 `uploads` → 勾选 Public bucket。
+然后到 SQL Editor 执行：
+
+```sql
+create policy "public upload uploads"
+  on storage.objects for insert
+  with check (bucket_id = 'uploads');
+```
+
+验证：`/feed` 页选一张图发布，去 Storage → uploads 里应该能看到文件。
+
 # 说明
 - 这样会允许公开读取和新增，适合你们两个人一起使用的私密小站原型
 - 如果你后面想加登录，可以再收紧权限

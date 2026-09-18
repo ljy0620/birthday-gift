@@ -26,7 +26,7 @@
 3. 打开浏览器访问 http://localhost:3000
 
 ## 最短部署
-步骤写在 `VERCEL_QUICKSTART.md`。
+步骤写在 `VERCEL_QUICKSTART.md` 和 `VERCEL_IMPORT_STEPS.md`。
 
 ## 另一台电脑运行
 - 两台电脑都安装 Node.js

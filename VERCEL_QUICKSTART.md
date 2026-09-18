@@ -14,9 +14,12 @@ git commit -m "build birthday site"
 2. 登录后点击 New project
 3. 新建一个项目
 4. 进入 Project Settings -> API
-5. 复制以下两个值：
+5. 复制以下两个值（**不要写进任何会被提交的文件**）：
    - Project URL
-   - anon public key
+   - anon public key：**要完整复制，JWT 是三段用 `.` 连接的**，少一个点就会让 `createClient` 直接报错
+
+> 这两个值请填进 Vercel 的环境变量，或本地的 `.env.local`（已在 `.gitignore` 里）。
+> 文档里不要留真实值：仓库一旦公开，任何人都能凭这两个值读写你的数据库。
 
 ## 3. 在 Supabase 执行 SQL
 打开 SQL Editor，把 `SUPABASE.md` 里的建表 SQL 粘贴并执行。
