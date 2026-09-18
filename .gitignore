@@ -1,5 +1,12 @@
 node_modules
 .next
 .env.local
+.env*.local
 .npm-cache
 tsconfig.tsbuildinfo
+
+# 密码/密钥一律不提交
+database_password.md
+*password*
+*secret*
+!package-lock.json

@@ -57,8 +57,14 @@ create policy "public insert study logs"
 公开 bucket 只能让所有人**读取**，**上传仍然需要单独的策略**——不加这段，
 代码里的图片上传会一直失败（而且以前是静默失败，现在会显示红字报错）。
 
-先创建 bucket：Storage → New bucket → 名字填 `uploads` → 勾选 Public bucket。
-然后到 SQL Editor 执行：
+**第 1 步，建 bucket：只能在 Storage 界面里建。**
+Storage → New bucket → 名字精确填 `uploads`（全小写）→ 打开 Public bucket。
+
+> 不要用 SQL 的 `insert into storage.buckets ...` 来建。实测会报
+> `Backend error! Retry your query.`——Supabase 挡掉了从 SQL Editor 直接写
+> `storage` schema 的操作。
+
+**第 2 步，建上传策略：** SQL Editor 执行——
 
 ```sql
 create policy "public upload uploads"
@@ -66,8 +72,23 @@ create policy "public upload uploads"
   with check (bucket_id = 'uploads');
 ```
 
-验证：`/feed` 页选一张图发布，去 Storage → uploads 里应该能看到文件。
+**第 3 步，验证：** 跑体检脚本，六项全绿才算通：
+
+```bash
+node scripts/verify-supabase.mjs
+```
+
+# 两个容易踩的坑
+
+- **不要用 `upsert: true` 上传。** 覆盖写入走的是 `INSERT ... ON CONFLICT DO UPDATE`，
+  需要额外的 UPDATE 策略，而我们只建了 INSERT 策略，会报
+  `new row violates row-level security policy`。应用代码用的是
+  `upsert: false` + 带时间戳的唯一文件名，不会踩到。
+- **不要用 `listBuckets()` 判断 bucket 存不存在。** anon key 没有列 bucket 的权限，
+  权限不足时它**不报错、直接返回空数组**，会把"建好了"误判成"没建"。
+  唯一可靠的办法是真的传一个文件，从报错内容反推：报 `Bucket not found` 才是真的没建。
 
 # 说明
 - 这样会允许公开读取和新增，适合你们两个人一起使用的私密小站原型
 - 如果你后面想加登录，可以再收紧权限
+- **数据库密码（`database_password.md`）不要提交到仓库**，已在 `.gitignore` 里挡掉
