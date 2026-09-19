@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/header';
 import { StudyCard } from '@/components/cards';
 import { studyLogs as initialLogs, type StudyLog } from '@/lib/data';
 import { loadStudyLogs, saveStudyLogs } from '@/lib/storage';
-import { supabase } from '@/lib/supabase';
+import { supabase, withTimeout } from '@/lib/supabase';
 
 export default function StudyPage() {
   const [logs, setLogs] = useState(initialLogs);
@@ -13,6 +13,7 @@ export default function StudyPage() {
   const [duration, setDuration] = useState('');
   const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -22,9 +23,23 @@ export default function StudyPage() {
         return;
       }
 
-      const { data } = await supabase.from('study_logs').select('*').order('created_at', { ascending: false });
-      if (data?.length) {
-        setLogs(data as StudyLog[]);
+      try {
+        const { data, error: readError } = await withTimeout(
+          supabase.from('study_logs').select('*').order('created_at', { ascending: false }),
+          '加载打卡记录'
+        );
+
+        if (readError) {
+          setLoadError(`打卡记录没加载出来：${readError.message}`);
+          return;
+        }
+        if (data?.length) {
+          setLogs(data as StudyLog[]);
+        }
+        setLoadError('');
+      } catch (caught) {
+        // 同 feed 页：读失败必须说出来，不能让人以为记录丢了
+        setLoadError(`${caught instanceof Error ? caught.message : '加载失败'}，请刷新重试`);
       }
     }
 
@@ -38,6 +53,10 @@ export default function StudyPage() {
   }, [logs]);
 
   const canSubmit = useMemo(() => title.trim().length > 0 && summary.trim().length > 0, [title, summary]);
+  const missingFields = useMemo(
+    () => [title.trim() ? '' : '今天学了什么', summary.trim() ? '' : '总结今天的收获'].filter(Boolean),
+    [title, summary]
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +78,10 @@ export default function StudyPage() {
       };
 
       if (supabase) {
-        const { error: insertError } = await supabase.from('study_logs').insert(nextLog);
+        const { error: insertError } = await withTimeout(
+          supabase.from('study_logs').insert(nextLog),
+          '保存打卡'
+        );
 
         if (insertError) {
           setError(`保存失败：${insertError.message}`);
@@ -113,10 +135,22 @@ export default function StudyPage() {
             >
               {submitting ? '保存中…' : '保存打卡'}
             </button>
+            {/* 按钮灰着的时候说清楚还差什么。之前这里什么都不显示，
+                填了标题没填总结就会以为"页面坏了"。 */}
+            {!canSubmit && !submitting ? (
+              <p className="text-sm text-blush-700">
+                按钮变亮才能保存，还差：{missingFields.join('、')}
+              </p>
+            ) : null}
           </div>
         </form>
 
         <div className="mt-8 grid gap-4">
+          {loadError ? (
+            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+              {loadError}
+            </p>
+          ) : null}
           {logs.map((log) => (
             <StudyCard key={log.id} {...log} />
           ))}

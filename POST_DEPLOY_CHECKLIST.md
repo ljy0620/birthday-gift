@@ -53,6 +53,50 @@ node scripts/check-deploy.mjs https://你的网址.vercel.app
 - 表或 Storage 问题 → 回本地跑 `node scripts/verify-supabase.mjs`
 
 ## 8. 大陆网络打不开怎么办
-`*.vercel.app` 在国内经常连不上，这是域名问题不是部署问题。
-判断方法：手机开热点（蜂窝网络）再打开一次，能开就是网络环境问题。
-解决办法：绑自定义域名，或换国内托管（如腾讯 EdgeOne Pages）。
+
+`*.vercel.app` 在国内**一定**打不开，这是域名本身被墙，不是你的部署坏了。
+
+实测证据（2026-09-20，命令行未挂梯子）：
+
+| 测试项 | 结果 |
+| --- | --- |
+| Supabase 数据库 | ✅ 1.2 秒，6/6 体检全过 |
+| Vercel 的服务器 IP（76.76.21.21） | ✅ 443 端口通，SNI 换成 `vercel.com` 返回 HTTP 200 |
+| 解析 `birthday-gift-tuzg.vercel.app` | ❌ 被污染，解析成 `108.160.172.1` 和 `...face:b00c...`（Dropbox 的 IP 段） |
+| 拿 vercel.app 这个域名去连 Vercel 的 IP | ❌ `Connection was reset` |
+| 同一个 IP，只把 SNI 换成别的域名 | ✅ 通了 |
+
+**结论：Vercel 的服务器没被封，Supabase 也没被封，被封的只有
+`vercel.app` 这一个域名。** 所以绑自定义域名就能解决——换了域名以后
+SNI 里不再出现 `vercel.app`，GFW 就不会重置连接。
+
+### 修法（推荐，最省事）
+
+1. 买一个域名（腾讯云 / 阿里云，`.top` `.xyz` 十几块一年，`.com` 六七十）
+2. 在域名的 DNS 解析里加一条 **A 记录**，指向 `76.76.21.21`
+   （这是 Vercel 的 IP；新版控制台也可能给 `216.198.79.1`，两家都实测通）
+3. Vercel → 你的项目 → **Settings → Domains** → 输入这个域名 → Add
+4. 等几分钟生效，之后用**自己的域名**访问，不用挂梯子
+
+> 注意要让 DNS 用国内的解析（腾讯云 / 阿里云默认就是），
+> 不要把域名解析到 `cname.vercel-dns.com`——实测它解析正常，
+> 但直接写 A 记录更稳。
+
+### 免费替代方案：换托管商
+
+站点是**纯静态**的（9 个路由全部预渲染，没有服务端代码），所以换托管很轻松。
+实测这几个域名在国内可以直连：
+
+- `edgeone.app`（腾讯云 EdgeOne Pages）✅
+- `pages.dev`（Cloudflare Pages）✅
+- `netlify.app`（Netlify）✅
+
+换过去要重新做一遍环境变量和部署，但不用花钱。
+代价是得重新注册账号、重新配 `NEXT_PUBLIC_SUPABASE_URL` 和
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`（值在 `.env.local` 里）。
+
+### 不管走哪条路：数据都不用动
+
+Supabase 在国内是直连的，数据库、图片都存在那边，
+换托管商只换"网页文件放在哪"，帖子一条都不会丢。
+

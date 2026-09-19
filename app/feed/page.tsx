@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/header';
 import { PostCard } from '@/components/cards';
 import { posts as initialPosts, type Post } from '@/lib/data';
 import { loadPosts, savePosts } from '@/lib/storage';
-import { supabase, uploadImage } from '@/lib/supabase';
+import { supabase, uploadImage, withTimeout } from '@/lib/supabase';
 
 export default function FeedPage() {
   const [posts, setPosts] = useState(initialPosts);
@@ -15,6 +15,7 @@ export default function FeedPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -24,9 +25,24 @@ export default function FeedPage() {
         return;
       }
 
-      const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-      if (data?.length) {
-        setPosts(data as Post[]);
+      try {
+        const { data, error: readError } = await withTimeout(
+          supabase.from('posts').select('*').order('created_at', { ascending: false }),
+          '加载动态'
+        );
+
+        if (readError) {
+          setLoadError(`动态没加载出来：${readError.message}`);
+          return;
+        }
+        if (data?.length) {
+          setPosts(data as Post[]);
+        }
+        setLoadError('');
+      } catch (caught) {
+        // 必须报错，不能悄悄留着一开始那几条示例数据。
+        // 否则网络一断，页面看起来就像"我发的东西全没了"，但其实只是没读到。
+        setLoadError(`${caught instanceof Error ? caught.message : '加载失败'}，请刷新重试`);
       }
     }
 
@@ -63,7 +79,7 @@ export default function FeedPage() {
       let finalImage = image.trim();
 
       if (!finalImage && file) {
-        const uploaded = await uploadImage(file);
+        const uploaded = await withTimeout(uploadImage(file), '图片上传');
         if (supabase && !uploaded) {
           setError('图片上传失败，请重试，或改成填写图片链接。');
           return;
@@ -85,7 +101,10 @@ export default function FeedPage() {
       };
 
       if (supabase) {
-        const { error: insertError } = await supabase.from('posts').insert(nextPost);
+        const { error: insertError } = await withTimeout(
+          supabase.from('posts').insert(nextPost),
+          '发布'
+        );
 
         if (insertError) {
           setError(`发布失败：${insertError.message}`);
@@ -150,6 +169,11 @@ export default function FeedPage() {
         </form>
 
         <div className="mt-8 grid gap-4">
+          {loadError ? (
+            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+              {loadError}
+            </p>
+          ) : null}
           {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
